@@ -39,6 +39,18 @@ echo "Cluster nonredundant hit sequence"
 python make_cdhit-prot_sh.py /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target/nonredundant_pep_union-hits.fa
 qsub cd-hit_nonredundant_pep_union-hits-90.sh
 
-echo "Generate sequence files of each clusterwith >= 2 seqs"
+echo "Generate sequence files of each clusterwith >= 2 seqs and 1 only"
 perl /opt/cd-hit/4.6.1/bin/make_multi_seq.pl /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target/nonredundant_pep_union-hits.fa /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target/nonredundant_pep_union-hits_c90.clstr /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target/nonredundant_pep_union-hits_c90_seq 2
+
+perl make_multi_seq.pl Target/nonredundant_pep_union-hits.fa Target/nonredundant_pep_union-hits_c90.clstr Target/nonredundant_pep_union-hits_c90_multi 2
+perl make_multi_seq.pl Target/nonredundant_pep_union-hits.fa Target/nonredundant_pep_union-hits_c90.clstr Target/nonredundant_pep_union-hits_c90_single 1
+
+echo "Rename protein hit sequences to include predicted pee match results"
+python rename_hit-flank-files_by_peps-to-repbase_results.py Target/predicted_to_repbase_banshee_full.txt Target/predicted_to_repbase_banshee_retros.txt Target/predicted_to_repbase_banshee_heli-mav.txt Target/predicted_to_repbase_banshee_no-matches.txt Target/nonredundant_pep_union-hits.fa Target/nonredundant_pep_union-10kb.fa
+
+echo "move clusters that have mojority predictions being retro, helitron or maverick. Also make new sequence files cleaned of the unwanted sequences"
+
+
+echo "summary family predicted in fasta"
+python summarize_protein_matches.py Target/nonredundant_pep_union-hits_match-info.fa Target/nonredundant_pep_union-hits_match-info.fa.summary
 
