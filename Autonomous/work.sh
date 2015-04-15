@@ -1,14 +1,14 @@
+##Start annotation
 echo "Run Target"
-
-#python make_target_peps_general.py /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Mutator_pep/fasta /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/reference/AaegL3.fa target 
-#qsub target_aedes_MULE_tpase.sh
-#qsub target_eukaryote_MULE_DDE_domain.sh
+python make_target_peps_general.py /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Mutator_pep/fasta /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/reference/AaegL3.fa target 
+qsub target_aedes_MULE_tpase.sh
+qsub target_eukaryote_MULE_DDE_domain.sh
 
 echo "Generate nonredundant BEDfile and sequence files"
-#python make_BEDfile_all_protein_hits.py /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target/all_pep-hits.bed /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/reference/AaegL3.fa /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target/nonredundant_pep_union-10kb.fa /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target/nonredundant_pep_union-hits.fa
+python make_BEDfile_all_protein_hits.py /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target/all_pep-hits.bed /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/reference/AaegL3.fa /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target/nonredundant_pep_union-10kb.fa /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target/nonredundant_pep_union-hits.fa
 
 echo "Seperate flank sequences to individual files"
-#python split_fasta.py /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target/nonredundant_pep_union-10kb.fa /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target/split
+python split_fasta.py /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target/nonredundant_pep_union-10kb.fa /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target/split
 
 echo "Generate Augustus prediction"
 python make_augustus_directory.py /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target/split aedes fly
@@ -40,11 +40,15 @@ python make_cdhit-prot_sh.py /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomou
 qsub cd-hit_nonredundant_pep_union-hits-90.sh
 
 echo "Generate sequence files of each clusterwith >= 2 seqs and 1 only"
-perl /opt/cd-hit/4.6.1/bin/make_multi_seq.pl /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target/nonredundant_pep_union-hits.fa /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target/nonredundant_pep_union-hits_c90.clstr /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/Autonomous/Target/nonredundant_pep_union-hits_c90_seq 2
-
+perl make_multi_seq.pl Target/nonredundant_pep_union-10kb.fa Target/nonredundant_pep_union-hits_c90.clstr Target/nonredundant_pep_union-10kb_c90_multi 2
+perl make_multi_seq.pl Target/nonredundant_pep_union-10kb.fa Target/nonredundant_pep_union-hits_c90.clstr Target/nonredundant_pep_union-10kb_c90_single 1
 perl make_multi_seq.pl Target/nonredundant_pep_union-hits.fa Target/nonredundant_pep_union-hits_c90.clstr Target/nonredundant_pep_union-hits_c90_multi 2
 perl make_multi_seq.pl Target/nonredundant_pep_union-hits.fa Target/nonredundant_pep_union-hits_c90.clstr Target/nonredundant_pep_union-hits_c90_single 1
 
+
+##Can stop here for MULE project for Kun, just use activeTE to find TSD and TIR
+
+##clean data when doing annotation for all DNA transposon
 echo "Rename protein hit sequences to include predicted pee match results"
 python rename_hit-flank-files_by_peps-to-repbase_results.py Target/predicted_to_repbase_banshee_full.txt Target/predicted_to_repbase_banshee_retros.txt Target/predicted_to_repbase_banshee_heli-mav.txt Target/predicted_to_repbase_banshee_no-matches.txt Target/nonredundant_pep_union-hits.fa Target/nonredundant_pep_union-10kb.fa
 
@@ -53,4 +57,21 @@ echo "move clusters that have mojority predictions being retro, helitron or mave
 
 echo "summary family predicted in fasta"
 python summarize_protein_matches.py Target/nonredundant_pep_union-hits_match-info.fa Target/nonredundant_pep_union-hits_match-info.fa.summary
+
+##activeTE for autonomous cluster
+echo "Trim 10 kb flanks down to 5kb (will use 10kb if need, i.e. flanks are too conserved by aTE analysis)"
+python trim_flanks_directory.py Target/nonredundant_pep_union-10kb_c90_multi/ 5000
+
+echo "Run multiple sequence alignments"
+python make_mafft_pep-cluster_split_one_sh.py Target/nonredundant_pep_union-10kb_c90_multi/ '*trimmed-5000.fa' aedes
+
+echo "Analyzing MSA files with activeTE"
+python make_activeTE-pep-msa-one.py Target/nonredundant_pep_union-10kb_c90_multi/ '*.msa' c90
+
+echo "Initial summarizing of aTE"
+python list_aTE_good_bad_mixed_pep.py Target/nonredundant_pep_union-10kb_c90_multi/aTE Target/nonredundant_pep_union-10kb_c90_multi/aTE_sum aedes_pep
+
+echo "Recombine results of split groups"
+python recombine_aTE-out3.py Target/nonredundant_pep_union-10kb_c90_multi/aTE_sumaedes_pep.good Target/nonredundant_pep_union-10kb_c90_multi/aTE/ Target/nonredundant_pep_union-10kb_c90_multi/aTE_recombine aedes_pep
+
 
