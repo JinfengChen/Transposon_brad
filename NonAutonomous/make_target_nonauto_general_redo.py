@@ -44,7 +44,7 @@ mode=mi
 
 middle = ''' -t nucl -o '''
 
-bottom = ''' -i $mode -P $CPU1 -C $CPU2 -b_a 12000 -DB -b_d 10 -E -W 5 -f 1.2 -a flanks -p_M 0.40 -p_n 12000 -p_d 6000 -p_f 100 '''
+bottom = ''' -i $mode -P $CPU1 -C $CPU2 -b_a 12000 -DB -b_d 10 -E -W 5 -f 1.2 -a flanks -p_M 0.40 -p_n 12000 -p_d 6000 -p_f 300 '''
 
 if not os.path.exists(sys.argv[2]):
     os.mkdir(sys.argv[2])

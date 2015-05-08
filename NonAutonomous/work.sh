@@ -30,7 +30,7 @@ echo "prepare target input"
 #mkdir initial_data/AaegL3.MH_RM/query
 #cat initial_data/AaegL3.MH_RM/initial_data/AaegL3.MH_RM/AedesL3_bad-to-unique_unique.fa initial_data/AaegL3.MH_RM/initial_data/AaegL3.MH_RM/AedesL3_unique.fa initial_data/AaegL3.MH_RM/query/AedesL3_unique_merge.fa
 
-echo "Run target"
+echo "Run target: should split sequence by length, <1000 bp use multiprocess to run multijob (-P 1 -C 16) and >1000 to use multiprocess run single job (-P 16 -C 1)"
 #python make_target_nonauto_general.py /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/NonAutonomous/initial_data/AaegL3.MH_RM/query /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/NonAutonomous/Target /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/reference/AaegL3.fa Target_Run
 #qsub Target_Run_AedesL3_unique.sh
 #qsub Target_Run_AedesL3_bad-to-unique_unique.sh
@@ -39,4 +39,58 @@ echo "Run activeTE"
 mkdir Target/Group_msa
 cp Target/Target_Run_2015_04_30_130853/AedesL3_unique_split*/*.msa Target/Group_msa
 python make_activeTE_sh.py Target/Group_msa/ '*.msa' activeTE_test
+python multi_sub_N_move.py . '*_under.sh' 100 aTE_submitted/
+python multi_sub_N_move.py . '*_split.sh' 100 aTE_submitted/
+python list_aTE_good_bad_mixed.py Target/Group_msa Target/Group_msa AedesL3_unique_test_aTE_sum
+python categorize_all_aTE_results_by_group.py Target/Group_msa Target/ Group_msa_sum
+
+echo "Run activeTE: unique"
+cd Target
+mkdir Target_Run_unique_group_split_msa
+cp Target_Run_unique_finished/AedesL3_unique_split*/*_under.group1_split.msa Target_Run_unique_group_split_msa/
+python make_activeTE_sh.py Target/Target_Run_unique_group_split_msa '*.msa' activeTE_Target_Run_unique_group_split
+python multi_sub_N_move.py . '*_split.sh' 200 aTE_submitted/
+python list_aTE_good_bad_mixed.py Target/Target_Run_unique_group_split_msa/ Target/Target_Run_unique_group_split_msa/ AedesL3_unique_Target_Run_unique_group_split_sum
+python categorize_all_aTE_results_by_group.py Target/Target_Run_unique_group_split_msa Target/Target_Run_unique_group_split_msa AedesL3_unique_Target_Run_unique_group_split_sum
+
+mkdir Target_Run_unique_group_msa
+cp Target_Run_unique_finished/AedesL3_unique_split*/*_under.msa Target_Run_unique_group_msa/
+python make_activeTE_sh.py Target/Target_Run_unique_group_msa/ '*.msa' activeTE_Target_Run_unique_group
+python multi_sub_N_move.py . '*_under.sh' 200 aTE_submitted/
+python list_aTE_good_bad_mixed.py Target/Target_Run_unique_group_msa/ Target/Target_Run_unique_group_msa/ AedesL3_unique_Target_Run_unique_group_sum
+python categorize_all_aTE_results_by_group.py Target/Target_Run_unique_group_msa Target/Target_Run_unique_group_msa AedesL3_unique_Target_Run_unique_group_sum
+
+
+echo "Redo bad, notsd and conserved, flanking=300bp"
+cat Target/Target_Run_unique_group_*/*.bad Target/Target_Run_unique_group_*/*.no_tsd Target/Target_Run_unique_group_*/*.conserved_flanks > Target/Target_Run_unique_group.redo.list
+python split_fasta_id.py initial_data/AaegL3.MH_RM/query/AedesL3_unique.fa
+python make_redo_fasta.py Target/Target_Run_unique_group.redo.list initial_data/AaegL3.MH_RM/query/AedesL3_unique.fa
+python make_target_nonauto_general_redo.py /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/NonAutonomous/initial_data/AaegL3.MH_RM/query/AedesL3_unique.redo/ /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/NonAutonomous/Target /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/reference/AaegL3.fa Target_Run_unique_redo
+qsub Target_Run_unique_redo_AedesL3_unique.redo_1k.sh
+qsub Target_Run_unique_redo_AedesL3_unique.redo_1kto3k.sh
+
+echo "Run activeTE: bad to unique"
+mkdir Target_Run_bad-to-unique_unique_group_split_msa
+cp Target_Run_bad-to-unique_unique_finished/AedesL3_bad-to-unique_unique_split*/*_under.group1_split.msa Target_Run_bad-to-unique_unique_group_split_msa/
+python make_activeTE_sh.py Target/Target_Run_bad-to-unique_unique_group_split_msa '*.msa' activeTE_Target_Run_bad-to-unique_unique_group_split
+python multi_sub_N_move.py . '*_split.sh' 200 aTE_submitted/
+python list_aTE_good_bad_mixed.py Target/Target_Run_bad-to-unique_unique_group_split_msa/ Target/Target_Run_bad-to-unique_unique_group_split_msa/ AedesL3_unique_Target_Run_bad-to-unique_unique_group_split_sum
+
+mkdir Target_Run_bad-to-unique_unique_group_msa
+cp Target_Run_bad-to-unique_unique_finished/AedesL3_bad-to-unique_unique_split*/*_under.msa Target_Run_bad-to-unique_unique_group_msa/
+python make_activeTE_sh.py Target/Target_Run_bad-to-unique_unique_group_msa '*.msa' activeTE_Target_Run_bad-to-unique_unique_group
+python multi_sub_N_move.py . '*_under.sh' 200 aTE_submitted/
+python list_aTE_good_bad_mixed.py Target/Target_Run_bad-to-unique_unique_group_msa/ Target/Target_Run_bad-to-unique_unique_group_msa/ AedesL3_unique_Target_Run_bad-to-unique_unique_group_sum
+
+echo "Redo bad, notsd and conserved, flanking=300bp"
+cat Target/Target_Run_bad-to-unique_unique_group_*/*.bad Target/Target_Run_bad-to-unique_unique_group_*/*.no_tsd Target/Target_Run_bad-to-unique_unique_group_*/*.conserved_flanks > Target/Target_Run_bad-to-unique_group.redo.list
+python split_fasta_id.py initial_data/AaegL3.MH_RM/query/AedesL3_bad-to-unique_unique.fa
+python make_redo_fasta.py Target/Target_Run_bad-to-unique_group.redo.list initial_data/AaegL3.MH_RM/query/AedesL3_bad-to-unique_unique.fa
+python make_target_nonauto_general_redo.py /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/NonAutonomous/initial_data/AaegL3.MH_RM/query/AedesL3_bad-to-unique_unique.redo/ /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/NonAutonomous/Target /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/reference/AaegL3.fa Target_Run_bad-to-unique_redo
+
+
+echo "TSD and TIR length"
+cat Target/*_group_*msa/*.flank_filter-1.2_under*/*.element_info > good.list
+cut -f 8 good.list | sort -n
+awk '{print length($4)}' good.list | awk '$1>50' | wc -l
 

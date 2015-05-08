@@ -1,0 +1,3 @@
+use Blogo;
+
+print "ok";
