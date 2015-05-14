@@ -28,6 +28,7 @@ files = os.listdir(sys.argv[1])
 
 top = '''#!/bin/bash
 #PBS -l nodes=1:ppn=16,mem=16g
+#PBS -l walltime=100:00:00
 module load stajichlab
 module load stajichlab-python
 module load mafft

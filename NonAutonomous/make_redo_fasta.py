@@ -32,12 +32,16 @@ def write_fasta(fastafile, id_list):
         new_id = str(record.id).replace(r'#', '_').replace(r'/', '_').replace(r'?', '')
         if id_list.has_key(new_id):
             newrecord = SeqRecord(record.seq, id=new_id, description="")
+            ofile4 = open ('%s/%s.fa' %(out_dir, id_list[new_id]), 'w')
             if len(str(record.seq)) <= 1000:
                 SeqIO.write(newrecord, ofile1, "fasta")
+                SeqIO.write(newrecord, ofile4, "fasta")
             elif len(str(record.seq)) <= 3000:
                 SeqIO.write(newrecord, ofile2, "fasta")
+                SeqIO.write(newrecord, ofile4, "fasta")
             else:
                 SeqIO.write(newrecord, ofile3, "fasta")
+                SeqIO.write(newrecord, ofile4, "fasta")
             count += 1
             out_list[new_id]
     print '%s of sequence output' %(count)
@@ -62,8 +66,10 @@ def read_redo_list(infile):
                 sid  = ''
                 if r.search(unit[0]):
                     sid = r.search(unit[0]).groups(0)[0]
+                    #count += 1
+                if not data.has_key(sid):
+                    data[sid] = 1
                     count += 1
-                data[sid] = 1
     print '%s of redo sequence' %(count)
     return data
 
@@ -77,7 +83,7 @@ def read_split_list(infile, redo_id):
             if len(line) > 2: 
                 unit = re.split(r'\t',line)
                 if redo_id.has_key(unit[0]):
-                    data[unit[1]] = 1
+                    data[unit[1]] = unit[0]
                     count += 1
     print '%s of id matched' %(count)
     return data

@@ -94,3 +94,32 @@ cat Target/*_group_*msa/*.flank_filter-1.2_under*/*.element_info > good.list
 cut -f 8 good.list | sort -n
 awk '{print length($4)}' good.list | awk '$1>50' | wc -l
 
+
+echo "MULE related query only"
+python make_target_nonauto_general_redo.py /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/NonAutonomous/initial_data_MULE/Merge/query/ /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/NonAutonomous/Target /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/reference/AaegL3.fa Target_Run
+python make_target_nonauto_general_redo.py /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/NonAutonomous/initial_data_MULE/Merge/query_noMULE /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/NonAutonomous/Target /rhome/cjinfeng/BigData/00.RD/Mosquito_TE/reference/AaegL3.fa Target_Run
+qsub -q highmem Target_Run_AedesL3_MULE.sh #2 cpu and 40g mem
+qsub -q highmem Target_Run_AedesL3_merge_noMULE.1k.sh #2 cpu and 40g mem
+
+cd Target
+mkdir Target_Run_AedesL3_MULE_msa
+cp Target_Run_AedesL3_MULE_finished/AedesL3_MULE_split*/*.msa Target_Run_AedesL3_MULE_msa/
+python make_activeTE_sh.py Target/Target_Run_AedesL3_MULE_msa/ '*.msa' activeTE_Target_Run_AedesL3_MULE
+python multi_sub_N_move.py . '*_under.sh' 200 aTE_submitted/
+python multi_sub_N_move.py . '*_split.sh' 200 aTE_submitted/
+python list_aTE_good_bad_mixed.py Target/Target_Run_AedesL3_MULE_msa/ Target/Target_Run_AedesL3_MULE_msa/ AedesL3_MULE_sum
+
+#round2
+cat Target/Target_Run_AedesL3_MULE_msa/AedesL3_MULE_sum.conserved_flanks Target/Target_Run_AedesL3_MULE_msa/AedesL3_MULE_sum.bad Target/Target_Run_AedesL3_MULE_msa/AedesL3_MULE_sum.no_tsd > Target/Target_Run_AedesL3_MULE.redo.list
+python split_fasta_id.py initial_data_MULE/Merge/AedesL3_MULE.fa
+python make_redo_fasta.py Target/Target_Run_AedesL3_MULE.redo.list initial_data_MULE/Merge/AedesL3_MULE.fa
+qsub -q highmem Target_Run_AedesL3_MULE_redo.sh #2 cpu and 40g mem
+
+cd Target
+mkdir Target_Run_AedesL3_MULE_round2_msa
+cp Target_Run_AedesL3_MULE_round2_finished/AedesL3_MULE_split*/*.msa Target_Run_AedesL3_MULE_round2_msa/
+python make_activeTE_sh.py Target/Target_Run_AedesL3_MULE_round2_msa/ '*.msa' activeTE_Target_Run_AedesL3_MULE_round2
+python multi_sub_N_move.py . '*_under.sh' 200 aTE_submitted/
+python multi_sub_N_move.py . '*_split.sh' 200 aTE_submitted/
+python list_aTE_good_bad_mixed.py Target/Target_Run_AedesL3_MULE_round2_msa/ Target/Target_Run_AedesL3_MULE_round2_msa/ AedesL3_MULE_round2_sum
+
